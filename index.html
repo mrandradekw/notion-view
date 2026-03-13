@@ -3,63 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion Dual Preview</title>
+    <title>Notion Dual-View Builder</title>
     <style>
-        /* Estilização para combinar com o Minimalismo do Notion */
-        body, html {
-            margin: 0; padding: 0; height: 100%; overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: transparent;
-        }
-        .container {
-            display: flex;
-            gap: 12px;
-            padding: 10px;
-            height: calc(100vh - 20px);
-            box-sizing: border-box;
-        }
-        iframe {
-            flex: 1;
-            border: 1px solid #e9e9e8;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            background: white;
-        }
-        .error {
-            display: flex; align-items: center; justify-content: center;
-            background: #f7f7f5; color: #a5a5a2; font-size: 14px;
-        }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #f7f7f5; }
+        #builder { padding: 20px; text-align: center; border-bottom: 1px solid #ddd; background: white; }
+        input { padding: 10px; width: 30%; border: 1px solid #ccc; border-radius: 5px; margin: 5px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #notion-link { margin-top: 10px; font-size: 0.9em; color: #666; word-break: break-all; }
+        .container { display: flex; gap: 10px; padding: 10px; height: calc(100vh - 120px); }
+        iframe { flex: 1; border: 1px solid #ddd; border-radius: 8px; background: white; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="container" id="view">
-    <div id="left-placeholder" class="error">Aguardando link 1...</div>
-    <div id="right-placeholder" class="error">Aguardando link 2...</div>
+<div id="builder">
+    <input type="text" id="linkLeft" placeholder="URL da Esquerda (https://...)">
+    <input type="text" id="linkRight" placeholder="URL da Direita (https://...)">
+    <button onclick="gerarPreview()">Gerar Preview e Link</button>
+    <div id="notion-link"></div>
+</div>
+
+<div class="container" id="previewArea">
+    <iframe id="frameLeft" class="hidden"></iframe>
+    <iframe id="frameRight" class="hidden"></iframe>
 </div>
 
 <script>
-    // Função para pegar parâmetros da URL
     const params = new URLSearchParams(window.location.search);
-    const leftUrl = params.get('left');
-    const rightUrl = params.get('right');
+    const urlL = params.get('left');
+    const urlR = params.get('right');
 
-    const container = document.getElementById('view');
-
-    function createIframe(url, side) {
-        if (!url) return;
-        const ifrm = document.createElement('iframe');
-        ifrm.src = url;
-        ifrm.setAttribute('frameborder', '0');
-        ifrm.setAttribute('allowfullscreen', 'true');
-        
-        const placeholder = document.getElementById(`${side}-placeholder`);
-        container.replaceChild(ifrm, placeholder);
+    // Se já vier com links na URL, esconde o construtor e mostra os iframes (ideal para o Notion)
+    if (urlL || urlR) {
+        document.getElementById('builder').classList.add('hidden');
+        document.getElementById('previewArea').style.height = '100vh';
+        exibirIframe('frameLeft', urlL);
+        exibirIframe('frameRight', urlR);
     }
 
-    // Executa a criação se os links existirem
-    createIframe(leftUrl, 'left');
-    createIframe(rightUrl, 'right');
+    function exibirIframe(id, url) {
+        if (!url) return;
+        const f = document.getElementById(id);
+        f.src = url;
+        f.classList.remove('hidden');
+    }
+
+    function gerarPreview() {
+        const l = document.getElementById('linkLeft').value;
+        const r = document.getElementById('linkRight').value;
+        const base = window.location.origin + window.location.pathname;
+        const finalUrl = `${base}?left=${encodeURIComponent(l)}&right=${encodeURIComponent(r)}`;
+        
+        document.getElementById('notion-link').innerHTML = `<strong>Link para o Notion:</strong><br>${finalUrl}`;
+        
+        exibirIframe('frameLeft', l);
+        exibirIframe('frameRight', r);
+    }
 </script>
 
 </body>

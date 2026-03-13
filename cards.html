@@ -1,33 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Generator</title>
+    <title>Notion Card Tool</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f7f7f5; }
-        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block; }
-        input { padding: 10px; width: 250px; margin: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        button { padding: 10px 20px; background: black; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        #res { margin-top: 20px; font-size: 12px; color: blue; word-break: break-all; max-width: 500px; }
+        body { font-family: -apple-system, sans-serif; background: #f7f7f5; margin: 0; padding: 0; }
+        .builder-ui { padding: 40px 20px; text-align: center; }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: inline-block; border: 1px solid #eee; }
+        input { padding: 12px; width: 280px; margin: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        button { padding: 12px 24px; background: #000; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin: 5px; }
+        button.copy { background: #007bff; }
+        #res-container { margin-top: 20px; display: none; background: #f0f0f0; padding: 15px; border-radius: 8px; }
+        
+        /* Estilo dos Cards (O que aparece no Notion) */
+        .container { display: flex; gap: 15px; padding: 10px; height: 100vh; box-sizing: border-box; }
+        .card { 
+            flex: 1; background: white; border: 1px solid #e9e9e8; border-radius: 12px; 
+            overflow: hidden; text-decoration: none; color: inherit;
+            display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .image { width: 100%; height: 55%; background-size: cover; background-position: center; background-color: #eee; }
+        .content { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+        .title { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #333; }
+        .desc { font-size: 12px; color: #666; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>Gerador de Cards para Notion</h2>
-        <input type="text" id="l" placeholder="Link 1 (https://...)">
-        <input type="text" id="r" placeholder="Link 2 (https://...)">
-        <br>
-        <button onclick="go()">Gerar Link Final</button>
-        <div id="res"></div>
-    </div>
 
-    <script>
-        function go() {
-            const l = document.getElementById('l').value;
-            const r = document.getElementById('r').value;
-            const link = window.location.href.split('?')[0] + "?left=" + encodeURIComponent(l) + "&right=" + encodeURIComponent(r);
-            document.getElementById('res').innerHTML = "<strong>Copia isto:</strong><br>" + link;
-        }
-    </script>
+<div id="builder" class="builder-ui">
+    <div class="box">
+        <h2>🗂️ Card Generator</h2>
+        <input type="text" id="l" placeholder="Link da Esquerda">
+        <input type="text" id="r" placeholder="Link da Direita">
+        <br>
+        <button onclick="gerar()">Gerar Link</button>
+        <div id="res-container">
+            <div id="final-url" style="font-size: 10px; margin-bottom: 10px; word-break: break-all; color: #007bff;"></div>
+            <button class="copy" onclick="copiar()">Copiar Link para o Notion</button>
+        </div>
+    </div>
+</div>
+
+<div id="display" class="container hidden"></div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const uL = params.get('left');
+    const uR = params.get('right');
+
+    // SE TIVER LINKS, MOSTRA OS CARDS E ESCONDE O GERADOR
+    if (uL || uR) {
+        document.getElementById('builder').classList.add('hidden');
+        document.getElementById('display').classList.remove('hidden');
+        document.body.style.background = "transparent";
+        if(uL) renderCard(uL);
+        if(uR) renderCard(uR);
+    }
+
+    function renderCard(url) {
+        fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`)
+            .then(res => res.json())
+            .then(res => {
+                const data = res.data;
+                const card = document.createElement('a');
+                card.className = 'card';
+                card.href = url;
+                card.target = '_blank';
+                card.innerHTML = `
+                    <div class="image" style="background-image: url('${data.image?.url || ''}')"></div>
+                    <div class="content">
+                        <div class="title">${data.title || 'Sem título'}</div>
+                        <div class="desc">${data.description || 'Sem descrição.'}</div>
+                    </div>
+                `;
+                document.getElementById('display').appendChild(card);
+            });
+    }
+
+    function gerar() {
+        const l = document.getElementById('l').value;
+        const r = document.getElementById('r').value;
+        const link = window.location.origin + window.location.pathname + "?left=" + encodeURIComponent(l) + "&right=" + encodeURIComponent(r);
+        
+        document.getElementById('final-url').innerText = link;
+        document.getElementById('res-container').style.display = 'block';
+    }
+
+    function copiar() {
+        const text = document.getElementById('final-url').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Link copiado! Agora é só colar no Notion como 'Embed'.");
+        });
+    }
+</script>
+
 </body>
 </html>

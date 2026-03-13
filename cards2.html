@@ -2,68 +2,107 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Notion Card Tool v1.4</title>
+    <title>Notion Card Tool v1.5</title>
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f7f7f5; margin: 0; padding: 0; }
-        .builder-ui { padding: 40px 20px; text-align: center; display: block; }
-        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: inline-block; border: 1px solid #eee; width: 90%; max-width: 450px; }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
-        button { padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
-        #copyBtn { background: #007bff; display: none; margin-top: 10px; }
-        #res { margin-top: 15px; font-size: 11px; color: #666; word-break: break-all; display: none; border: 1px dashed #ccc; padding: 10px; background: #f9f9f9; }
+        body { font-family: -apple-system, sans-serif; background: transparent; margin: 0; padding: 0; }
+        
+        /* Interface do Gerador (visível apenas na criação) */
+        .builder-ui { padding: 40px 20px; text-align: center; background: #f7f7f5; min-height: 100vh; box-sizing: border-box; }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: inline-block; width: 95%; max-width: 450px; border: 1px solid #eee; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        button { padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        #res { margin-top: 15px; font-size: 11px; word-break: break-all; display: none; border: 1px dashed #ccc; padding: 10px; background: #f9f9f9; }
 
-        /* Layout Notion - Ajustado para eliminar espaço vazio */
-        .container { display: flex; gap: 12px; padding: 10px; display: none; justify-content: center; align-items: flex-start; }
-        .card { 
-            flex: 1; max-width: 50%; background: #fff; border: 1px solid #e9e9e8; border-radius: 10px; 
-            text-decoration: none; color: inherit; display: flex; flex-direction: column; overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        /* Layout Final - SEM PADDING e OCUPANDO TUDO */
+        .container { 
+            display: flex; 
+            gap: 10px; 
+            padding: 0; /* Removido o padding lateral */
+            margin: 0;
+            width: 100%; 
+            display: none; /* Escondido por padrão, ativado via JS */
         }
-        /* Altura fixa para a imagem não "esticar" */
-        .image { width: 100%; height: 120px; background-size: cover; background-position: center; background-color: #eee; flex-shrink: 0; }
-        /* Padding ajustado para o texto ficar próximo à imagem */
-        .content { padding: 10px 12px 14px 12px; display: flex; flex-direction: column; }
-        .title { font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #111; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .desc { font-size: 11px; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .card { 
+            flex: 1; 
+            background: #fff; 
+            border: 1px solid #e9e9e8; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            color: inherit; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        .image { 
+            width: 100%; 
+            height: 120px; 
+            background-size: cover; 
+            background-position: center; 
+            background-color: #eee; 
+            flex-shrink: 0; 
+        }
+
+        .content { 
+            padding: 10px; /* Padding interno do card apenas */
+        }
+
+        .title { 
+            font-weight: 700; 
+            font-size: 13px; 
+            margin-bottom: 4px; 
+            color: #111; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            overflow: hidden; 
+            line-height: 1.2;
+        }
+
+        .desc { 
+            font-size: 11px; 
+            color: #666; 
+            line-height: 1.3; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            overflow: hidden; 
+        }
     </style>
 </head>
 <body>
 
 <div id="builder" class="builder-ui">
     <div class="box">
-        <h2>Card Generator v1.4</h2>
-        <input type="text" id="l1" placeholder="Link da Esquerda">
-        <input type="text" id="l2" placeholder="Link da Direita">
-        <button onclick="gerar()">Gerar Link</button>
+        <h2>Card Generator v1.5</h2>
+        <input type="text" id="l1" placeholder="Link Esquerda">
+        <input type="text" id="l2" placeholder="Link Direita">
+        <button onclick="gerar()">Gerar Link para o Notion</button>
         <div id="res"></div>
-        <button id="copyBtn" onclick="copiar()">Copiar Link</button>
+        <button id="copyBtn" onclick="copiar()" style="display:none; background:#007bff; margin-top:10px; color:white; border:none; padding:10px; border-radius:5px; width:100%; cursor:pointer;">Copiar Link</button>
     </div>
 </div>
 
 <div id="display" class="container"></div>
 
 <script>
-    function getParam(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
-    }
+    const p = new URLSearchParams(window.location.search);
+    const l1 = p.get('l1'), l2 = p.get('l2');
 
-    const link1 = getParam('l1');
-    const link2 = getParam('l2');
-
-    if (link1 || link2) {
+    // Se houver links, entra no modo "Exibição"
+    if (l1 || l2) {
         document.getElementById('builder').style.display = 'none';
         document.getElementById('display').style.display = 'flex';
-        document.body.style.background = "transparent";
-        if(link1) renderCard(link1);
-        if(link2) renderCard(link2);
+        if(l1) render('display', l1);
+        if(l2) render('display', l2);
     }
 
-    function renderCard(url) {
+    function render(id, url) {
         fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`)
             .then(r => r.json()).then(res => {
                 const d = res.data;
-                const cardHtml = `
+                document.getElementById(id).innerHTML += `
                     <a class="card" href="${url}" target="_blank">
                         <div class="image" style="background-image: url('${d.image?.url || ''}')"></div>
                         <div class="content">
@@ -71,21 +110,19 @@
                             <div class="desc">${d.description || ''}</div>
                         </div>
                     </a>`;
-                document.getElementById('display').innerHTML += cardHtml;
             });
     }
 
     function gerar() {
-        const baseUrl = window.location.origin + window.location.pathname;
-        const finalUrl = baseUrl + "?l1=" + encodeURIComponent(document.getElementById('l1').value.trim()) + "&l2=" + encodeURIComponent(document.getElementById('l2').value.trim());
-        document.getElementById('res').innerText = finalUrl;
+        const final = window.location.origin + window.location.pathname + "?l1=" + encodeURIComponent(document.getElementById('l1').value) + "&l2=" + encodeURIComponent(document.getElementById('l2').value);
+        document.getElementById('res').innerText = final;
         document.getElementById('res').style.display = 'block';
         document.getElementById('copyBtn').style.display = 'block';
     }
 
     function copiar() {
         navigator.clipboard.writeText(document.getElementById('res').innerText).then(() => {
-            document.getElementById('copyBtn').innerText = "✅ Copiado!";
+            alert("Copiado com sucesso!");
         });
     }
 </script>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Dual Preview</title>
+    <style>
+        /* Estilização para combinar com o Minimalismo do Notion */
+        body, html {
+            margin: 0; padding: 0; height: 100%; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: transparent;
+        }
+        .container {
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            height: calc(100vh - 20px);
+            box-sizing: border-box;
+        }
+        iframe {
+            flex: 1;
+            border: 1px solid #e9e9e8;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: white;
+        }
+        .error {
+            display: flex; align-items: center; justify-content: center;
+            background: #f7f7f5; color: #a5a5a2; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="view">
+    <div id="left-placeholder" class="error">Aguardando link 1...</div>
+    <div id="right-placeholder" class="error">Aguardando link 2...</div>
+</div>
+
+<script>
+    // Função para pegar parâmetros da URL
+    const params = new URLSearchParams(window.location.search);
+    const leftUrl = params.get('left');
+    const rightUrl = params.get('right');
+
+    const container = document.getElementById('view');
+
+    function createIframe(url, side) {
+        if (!url) return;
+        const ifrm = document.createElement('iframe');
+        ifrm.src = url;
+        ifrm.setAttribute('frameborder', '0');
+        ifrm.setAttribute('allowfullscreen', 'true');
+        
+        const placeholder = document.getElementById(`${side}-placeholder`);
+        container.replaceChild(ifrm, placeholder);
+    }
+
+    // Executa a criação se os links existirem
+    createIframe(leftUrl, 'left');
+    createIframe(rightUrl, 'right');
+</script>
+
+</body>
+</html>

@@ -2,28 +2,28 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Notion Card Tool</title>
+    <title>Notion Card Tool v1.2</title>
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f7f7f5; margin: 0; padding: 0; }
-        .builder-ui { padding: 60px 20px; text-align: center; }
-        .box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); display: inline-block; border: 1px solid #eee; max-width: 500px; }
-        h2 { margin-top: 0; color: #333; font-size: 22px; }
-        input { padding: 12px; width: 80%; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 14px; }
-        input:focus { border-color: #007bff; }
-        .btn-group { margin-top: 15px; }
-        button { padding: 12px 24px; background: #000; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        button:hover { opacity: 0.8; }
-        #copyBtn { background: #007bff; display: none; margin-top: 10px; width: 100%; }
-        #res-container { margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px dashed #ccc; display: none; }
-        #final-url { font-size: 11px; color: #666; word-break: break-all; margin-bottom: 10px; }
-        
-        /* Layout dos Cards */
-        .container { display: flex; gap: 15px; padding: 15px; height: 100vh; box-sizing: border-box; }
-        .card { flex: 1; background: white; border: 1px solid #e9e9e8; border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .image { width: 100%; height: 60%; background-size: cover; background-position: center; background-color: #f0f0f0; }
-        .content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; }
-        .title { font-weight: 700; font-size: 15px; margin-bottom: 6px; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .desc { font-size: 13px; color: #666; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        body { font-family: -apple-system, sans-serif; background: #f7f7f5; margin: 0; padding: 0; overflow: hidden; }
+        .builder-ui { padding: 40px 20px; text-align: center; overflow: auto; height: 100vh; }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: inline-block; border: 1px solid #eee; width: 90%; max-width: 450px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        button { padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
+        #copyBtn { background: #007bff; display: none; margin-top: 10px; }
+        #res { margin-top: 15px; font-size: 11px; color: #666; word-break: break-all; display: none; border: 1px dashed #ccc; padding: 10px; background: #f9f9f9; }
+
+        /* Layout Notion */
+        .container { display: flex; gap: 12px; padding: 10px; height: 100vh; box-sizing: border-box; align-items: stretch; }
+        .card { 
+            flex: 1; background: #fff; border: 1px solid #e9e9e8; border-radius: 10px; 
+            text-decoration: none; color: inherit; display: flex; flex-direction: column; overflow: hidden;
+            transition: background 0.2s;
+        }
+        .card:hover { background: #fcfcfc; }
+        .image { width: 100%; height: 50%; background-size: cover; background-position: center; background-color: #f0f0f0; flex-shrink: 0; }
+        .content { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+        .title { font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #111; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .desc { font-size: 11px; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -31,72 +31,62 @@
 
 <div id="builder" class="builder-ui">
     <div class="box">
-        <h2>🗂️ Card Generator</h2>
-        <p style="color: #888; font-size: 14px;">Cola os links para gerar o visual do Notion</p>
-        <input type="text" id="l" placeholder="Link da Esquerda (https://...)">
-        <input type="text" id="r" placeholder="Link da Direita (https://...)">
-        <div class="btn-group">
-            <button onclick="gerar()">Gerar Link</button>
-        </div>
-        <div id="res-container">
-            <div id="final-url"></div>
-            <button id="copyBtn" onclick="copiar()">Copiar Link para o Notion</button>
-        </div>
+        <h2>Card Generator v1.2</h2>
+        <input type="text" id="l1" placeholder="Link da Esquerda (https://...)">
+        <input type="text" id="l2" placeholder="Link da Direita (https://...)">
+        <button onclick="gerar()">Gerar Link para Notion</button>
+        <div id="res"></div>
+        <button id="copyBtn" onclick="copiar()">Copiar Link</button>
     </div>
 </div>
 
 <div id="display" class="container hidden"></div>
 
 <script>
-    const params = new URLSearchParams(window.location.search);
-    const uL = params.get('left');
-    const uR = params.get('right');
+    const urlParams = new URLSearchParams(window.location.search);
+    const link1 = urlParams.get('l1');
+    const link2 = urlParams.get('l2');
 
-    if (uL || uR) {
+    // Se existirem links na URL, mostra os cards
+    if (link1 || link2) {
         document.getElementById('builder').classList.add('hidden');
         document.getElementById('display').classList.remove('hidden');
-        document.body.style.background = "transparent";
-        if(uL) renderCard(uL);
-        if(uR) renderCard(uR);
+        if(link1) fetchMeta(link1);
+        if(link2) fetchMeta(link2);
     }
 
-    function renderCard(url) {
+    function fetchMeta(url) {
         fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`)
-            .then(res => res.json())
-            .then(res => {
-                const data = res.data;
-                const card = document.createElement('a');
-                card.className = 'card';
-                card.href = url; card.target = '_blank';
-                card.innerHTML = `
-                    <div class="image" style="background-image: url('${data.image?.url || ''}')"></div>
-                    <div class="content">
-                        <div class="title">${data.title || 'Link'}</div>
-                        <div class="desc">${data.description || 'Sem descrição disponível.'}</div>
-                    </div>`;
-                document.getElementById('display').appendChild(card);
+            .then(r => r.json()).then(res => {
+                const d = res.data;
+                const cardHtml = `
+                    <a class="card" href="${url}" target="_blank">
+                        <div class="image" style="background-image: url('${d.image?.url || ''}')"></div>
+                        <div class="content">
+                            <div class="title">${d.title || 'Link'}</div>
+                            <div class="desc">${d.description || ''}</div>
+                        </div>
+                    </a>`;
+                document.getElementById('display').innerHTML += cardHtml;
             });
     }
 
     function gerar() {
-        const l = document.getElementById('l').value;
-        const r = document.getElementById('r').value;
-        if(!l && !r) return alert("Insere pelo menos um link!");
+        const b = window.location.origin + window.location.pathname;
+        const l1 = document.getElementById('l1').value;
+        const l2 = document.getElementById('l2').value;
+        const final = `${b}?l1=${encodeURIComponent(l1)}&l2=${encodeURIComponent(l2)}`;
         
-        const link = window.location.origin + window.location.pathname + "?left=" + encodeURIComponent(l) + "&right=" + encodeURIComponent(r);
-        document.getElementById('final-url').innerText = link;
-        document.getElementById('res-container').style.display = 'block';
+        document.getElementById('res').innerText = final;
+        document.getElementById('res').style.display = 'block';
         document.getElementById('copyBtn').style.display = 'block';
-        document.getElementById('copyBtn').innerText = "Copiar Link para o Notion";
-        document.getElementById('copyBtn').style.background = "#007bff";
     }
 
     function copiar() {
-        const text = document.getElementById('final-url').innerText;
-        navigator.clipboard.writeText(text).then(() => {
+        navigator.clipboard.writeText(document.getElementById('res').innerText).then(() => {
             const btn = document.getElementById('copyBtn');
             btn.innerText = "✅ Copiado!";
-            btn.style.background = "#28a745";
+            setTimeout(() => { btn.innerText = "Copiar Link"; }, 2000);
         });
     }
 </script>

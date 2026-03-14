@@ -2,39 +2,94 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Notion FB Embedder v1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion FB Embedder v1.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
+        /* Estilos Base */
         html, body { 
             background: transparent; 
             margin: 0; 
             padding: 0; 
             font-family: 'Montserrat', sans-serif; 
+            color: #1c1e21;
         }
         
-        /* UI do Gerador */
-        .builder-ui { padding: 40px 20px; text-align: center; background: #f0f2f5; min-height: 100vh; box-sizing: border-box; }
-        .box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: inline-block; width: 95%; max-width: 500px; }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; }
-        button { padding: 12px; background: #1877f2; color: #fff; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-family: 'Montserrat', sans-serif; }
-        #res { margin-top: 15px; font-size: 11px; word-break: break-all; display: none; border: 1px dashed #ccc; padding: 10px; background: #f9f9f9; }
+        /* Interface do Gerador */
+        .builder-ui { 
+            padding: 40px 20px; 
+            text-align: center; 
+            background: #f0f2f5; 
+            min-height: 100vh; 
+            box-sizing: border-box; 
+        }
+        .box { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            display: inline-block; 
+            width: 95%; 
+            max-width: 500px; 
+        }
+        h2 { color: #1877f2; margin-top: 0; }
+        input { 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            margin-bottom: 10px; 
+            font-family: 'Montserrat', sans-serif; 
+        }
+        button { 
+            padding: 12px; 
+            background: #1877f2; 
+            color: #fff; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-weight: bold; 
+            font-family: 'Montserrat', sans-serif; 
+            transition: background 0.3s;
+        }
+        button:hover { background: #166fe5; }
+        
+        #res { 
+            margin-top: 15px; 
+            font-size: 11px; 
+            word-break: break-all; 
+            display: none; 
+            border: 1px dashed #ccc; 
+            padding: 10px; 
+            background: #f9f9f9; 
+        }
 
-        /* Content Display */
+        /* Content Display (O que aparece no Notion) */
         .fb-container { 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             gap: 20px; 
-            padding: 10px; 
-            display: none; 
+            padding: 15px; 
+            display: none; /* Escondido por padrão, aparece via JS */
         }
 
-        /* Ajuste para o iframe não fugir do ecrã no mobile */
         iframe {
             max-width: 100%;
             border: none;
             overflow: hidden;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: #65676b;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -42,23 +97,27 @@
 
 <div id="builder" class="builder-ui">
     <div class="box">
-        <h2 style="color: #1877f2;">FB Post Embedder</h2>
-        <p style="font-size: 14px; color: #65676b;">Cole o link do post do Facebook abaixo:</p>
-        <input type="text" id="fb1" placeholder="Link do Post 1 (Ex: https://facebook.com/...)">
+        <h2>FB Post Embedder</h2>
+        <p style="font-size: 14px; color: #65676b;">Cole o link do post público do Facebook:</p>
+        <input type="text" id="fb1" placeholder="Link do Post 1">
         <input type="text" id="fb2" placeholder="Link do Post 2 (Opcional)">
         <button onclick="gerar()">Gerar Link para Notion</button>
+        
         <div id="res"></div>
-        <button id="copyBtn" onclick="copiar()" style="display:none; background:#42b72a; margin-top:10px; color:white; border:none; padding:10px; border-radius:5px; width:100%; cursor:pointer;">Copiar Link Final</button>
+        
+        <button id="copyBtn" onclick="copiar()" style="display:none; background:#42b72a; margin-top:10px;">Copiar Link Final</button>
     </div>
 </div>
 
 <div id="display" class="fb-container"></div>
 
 <script>
+    // 1. Capturar parâmetros da URL
     const params = new URLSearchParams(window.location.search);
     const fb1 = params.get('fb1');
     const fb2 = params.get('fb2');
 
+    // 2. Lógica de Alternância: Se houver links, mostra os posts. Se não, mostra o gerador.
     if (fb1 || fb2) {
         document.getElementById('builder').style.display = 'none';
         document.getElementById('display').style.display = 'flex';
@@ -66,38 +125,51 @@
         if(fb2) renderFB(fb2);
     }
 
+    // 3. Função para renderizar o Iframe oficial do Facebook
     function renderFB(url) {
-        // Criamos o iframe usando o URL de plugin do Facebook
         const encodedUrl = encodeURIComponent(url);
+        const container = document.getElementById('display');
+        
+        // Criamos um elemento de carregamento temporário
+        const loaderId = "loader-" + Math.random().toString(36).substr(2, 9);
+        container.innerHTML += `<div id="${loaderId}" class="loading-text">A carregar conteúdo do Facebook...</div>`;
+
         const iframeHtml = `
             <iframe 
                 src="https://www.facebook.com/plugins/post.php?href=${encodedUrl}&show_text=true&width=500" 
                 width="500" 
-                height="700" 
+                height="750" 
                 scrolling="no" 
                 frameborder="0" 
                 allowfullscreen="true" 
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                onload="document.getElementById('${loaderId}').style.display='none'">
             </iframe>`;
-        document.getElementById('display').innerHTML += iframeHtml;
+        
+        container.innerHTML += iframeHtml;
     }
 
+    // 4. Função para criar o link final (URL da página + parâmetros)
     function gerar() {
-        const link1 = document.getElementById('fb1').value;
-        const link2 = document.getElementById('fb2').value;
+        const val1 = document.getElementById('fb1').value.trim();
+        const val2 = document.getElementById('fb2').value.trim();
         
-        const finalUrl = window.location.origin + window.location.pathname + 
-                         "?fb1=" + encodeURIComponent(link1) + 
-                         "&fb2=" + encodeURIComponent(link2);
+        if(!val1) { alert("Por favor, insira pelo menos o primeiro link."); return; }
+
+        const baseUrl = window.location.origin + window.location.pathname;
+        const finalUrl = `${baseUrl}?fb1=${encodeURIComponent(val1)}&fb2=${encodeURIComponent(val2)}`;
         
-        document.getElementById('res').innerText = finalUrl;
-        document.getElementById('res').style.display = 'block';
+        const resDiv = document.getElementById('res');
+        resDiv.innerText = finalUrl;
+        resDiv.style.display = 'block';
         document.getElementById('copyBtn').style.display = 'block';
     }
 
+    // 5. Função de Copiar
     function copiar() {
-        navigator.clipboard.writeText(document.getElementById('res').innerText).then(() => {
-            alert("Link copiado! Agora cole-o como 'Embed' no Notion.");
+        const text = document.getElementById('res').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Link copiado com sucesso!");
         });
     }
 </script>
